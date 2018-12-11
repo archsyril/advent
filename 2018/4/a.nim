@@ -3,14 +3,13 @@ type Event = enum sleep, wake, start
 type Record = object
   dt: DateTime
   case event: Event
-  of start: 
+  of start:
     id: uint
   else: discard
 type Schedule = seq[Slice[uint]]
 type Schedules = Table[uint, Schedule]
-type UnorgRecords = seq[Record]
-type Records = array[1040, Record]
-proc process(fn: string): UnorgRecords=
+type Records = seq[Record]
+proc process(fn: string): Records=
   var fs = newFileStream(fn)
   var i: uint
   for ln in fs.lines:
@@ -25,23 +24,24 @@ proc process(fn: string): UnorgRecords=
     result.add rcrd
     inc i
 
-proc organize(unorg: var UnorgRecords): Records=
-  let sml: DateTime = initDateTime(1, mJan, 2000, 1, 1, 1, 1)
+proc organize(unorg: var Records)=
+  var
+    cur = initDateTime(1, mJan, 2000, 1, 1, 1, 1)
+    ind: int
+    tmp: Records
   for i in 0..Records.high:
-    var
-      ind: int
-      cur = sml
     for j, rcrd in unorg:
       if rcrd.dt < cur:
         cur = rcrd.dt
         ind = j
-    result[i] = unorg[ind]
-    unorg.delete(ind)
+    tmp.add unorg[ind]
+  urorg = tmp
 
-proc convertdt(r: DateTime): uint= (r.month.int*1000000 + r.monthday*10000 + r.hour*100 + r.minute).uintN
+proc convertdt(r: DateTime): uint= (r.month.int*1000000 + r.monthday*10000 + r.hour*100 + r.minute).uint8
 proc schedule(rcrds: var Records): Schedules=
   result = initTable[uint, Schedule]()
-  var i, id: uint
+  result[0].id = rcrds.pop().id
+  result[0]
   while i <= rcrds.high-3:
     var rcrd = rcrds[i]
     case rcrd.event:
@@ -54,10 +54,7 @@ proc schedule(rcrds: var Records): Schedules=
     if rcrds[i+3].event == start: i += 3
     else: i += 2
 
-var
-  records: Records
-block:
-  var unorganized = process("input4.txt")
-  records = unorganized.organize()
-for s in schedule(records):
-  echo s
+var records = process("input")
+records.organize()
+for guard, times in schedule(records):
+  echo times
