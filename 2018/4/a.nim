@@ -1,4 +1,4 @@
-import streams, parseutils, strutils, times, tables
+import streams, parseutils, strutils, times, tables, algorithm
 type Event = enum sleep, wake, start
 type Record = object
   dt: DateTime
@@ -6,12 +6,12 @@ type Record = object
   of start:
     id: uint
   else: discard
+type Records = seq[Record]
 type Schedule = seq[Slice[uint]]
 type Schedules = Table[uint, Schedule]
-type Records = seq[Record]
+type Asleep = array[60, uint]
 proc process(fn: string): Records=
   var fs = newFileStream(fn)
-  var i: uint
   for ln in fs.lines:
     var rcrd: Record
     rcrd.dt = parse(ln[1..16], "yyyy-MM-dd HH:mm")
@@ -22,39 +22,73 @@ proc process(fn: string): Records=
       rcrd.event = start
       discard parseUint(ln[26..29], rcrd.id)
     result.add rcrd
-    inc i
-
-proc organize(unorg: var Records)=
-  var
-    cur = initDateTime(1, mJan, 2000, 1, 1, 1, 1)
-    ind: int
-    tmp: Records
-  for i in 0..Records.high:
-    for j, rcrd in unorg:
-      if rcrd.dt < cur:
-        cur = rcrd.dt
-        ind = j
-    tmp.add unorg[ind]
-  urorg = tmp
-
-proc convertdt(r: DateTime): uint= (r.month.int*1000000 + r.monthday*10000 + r.hour*100 + r.minute).uint8
+  fs.close()
+proc convert(r: DateTime): uint=
+  (r.hour*100 + r.minute).uint
 proc schedule(rcrds: var Records): Schedules=
   result = initTable[uint, Schedule]()
-  result[0].id = rcrds.pop().id
-  result[0]
-  while i <= rcrds.high-3:
-    var rcrd = rcrds[i]
-    case rcrd.event:
-    of start:
-      id = rcrd.id
-      if id notin result:
-        result[id] = @[]
-    else: discard
-    result[id].add(rcrds[i+1].dt.convertdt() .. rcrds[i+2].dt.convertdt())
-    if rcrds[i+3].event == start: i += 3
-    else: i += 2
-
+  while rcrds.len != 0:
+    let id = rcrds.pop().id
+    if id notin result:
+      result[id] = @[]
+    while rcrds.len != 0 and rcrds[rcrds.len-1].event != start:
+      var sleep = rcrds.pop().dt.convert
+      var wake  = rcrds.pop().dt.convert
+      result[id].add sleep..wake-1
+#year, month, day, hour, minute
 var records = process("input")
-records.organize()
+records.sort do (a,b: Record) -> int:
+  result = cmp(a.dt, b.dt)
+records.reverse()
+proc mostAsleep(aslp: Asleep): uint=
+  result = 0
+  var top: uint
+  for i, mn in aslp:
+    if mn > top:
+      result = i
+      top = mn
+
 for guard, times in schedule(records):
-  echo times
+  var aslp: Asleep
+  for time in times:
+    for minute in 0.uint..61.uint:
+      if minute in time:
+        aslp[minute] += 1
+  echo guard, ": ", max(aslp), ", ", aslp.mostAsleep()
+  #let minute = aslp.mostAsleep()
+  #if aslp[minute] > top:
+  #  top = aslp[minute]
+  #  id = guard
+  #  top_minute = minute
+  #  #echo guard, ": ", minute, ", ", aslp[minute]
+#echo id * top_minute
+#echo id, " ", top, " ", top_minute
+# 4842, 10760
+#[
+proc mostAsleep(aslp: Asleep): uint=
+  result = 0
+  var top: uint
+  for i, mn in aslp:
+    if mn > top:
+      result = i
+      top = mn
+template calcSleep(times: Slice[uint]): uint= times.b-times.a
+var mostSleepy, sleepTime: uint
+var sleepSchedule = schedule(records)
+for guard, times in sleepSchedule:
+  var guardSleepTime: uint
+  for time in times:
+    guardSleepTime += time.calcSleep()
+  if guardSleepTime > sleepTime:
+    echo guard, " ", guardSleepTime
+    sleepTime = guardSleepTime
+    mostSleepy = guard
+var aslp: Asleep
+for time in sleepSchedule[mostSleepy]:
+  for minute in 0.uint..<60.uint:
+    if minute in time:
+      aslp[minute] += 1
+let minute = aslp.mostAsleep
+echo mostSleepy, ": ", minute, ", ", aslp[minute]
+echo mostSleepy * minute
+]#

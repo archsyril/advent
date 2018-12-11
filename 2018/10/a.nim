@@ -1,4 +1,4 @@
-import streams, parseutils
+import streams, parseutils, math, sequtils
 type Star = object
   x,y, xv,yv: ref int
 type Stars = object
@@ -27,14 +27,30 @@ proc process(fn: string): Stars=
     result.x.add(result[i].x)
     result.y.add(result[i].y)
     inc(i)
+proc max[T](vs: seq[ref T]): T=
+  result = T.low
+  for v in vs:
+    if result < v:
+      result = v
+proc min[T](vs: seq[ref T]): T=
+  result = T.high
+  for v in vs:
+    if result > v:
+      result = v
 converter derefInt(ri: ref int): int= ri[]
 template `$`(ri: ref SomeNumber): string= $(ri[])
-template update(st: var Star)= st.x[] += st.xv; st.y[] += st.xv
-proc wait(sts: var Stars, scnds: uint = 1)=
-  for scnd in 0.uint..<scnds:
-    for i in 0..sts.stars.high:
-      sts[i].update()
-var stars = process("input10.txt")
-for scnd in 0..5000:
-  stars.wait()
-  
+template update(st: var Star, by: int)= st.x[] += (st.xv * by); st.y[] += (st.xv * by)
+proc avg[T](sq: seq[ref T]): T=
+  result = 0
+  for each in sq:
+    result += each[]
+  result = (result.float / sq.len.float).T
+#proc area(sts: Stars): int= min(sts.x).abs+max(sts.x).abs * min(sts.y).abs+max(sts.y).abs
+proc wait(sts: var Stars, scnds: int = 1)= 
+  for i in 0..sts.stars.high:
+    sts[i].update(scnds)
+var stars = process("input")
+#27..33
+stars.wait(10127)
+echo stars.x.avg, " ", stars.y.avg
+echo stars.y
