@@ -1,12 +1,12 @@
 import streams, strutils, parseutils
 const
-  HEIGHT: uint = 360
-  WIDTH:  uint = 360
+  HEIGHT: uint = 81
+  WIDTH:  uint = 185
 type
   Point = object
     x, y: uint
   Coordinates = array[50, Point]
-  Grid = array[HEIGHT, array[WIDTH, uint16]]
+  Grid = array[HEIGHT, array[WIDTH, uint8]]
 proc initGrid(fn: string): Grid=
   var fs = newFileStream(fn)
   var id: uint = 1
