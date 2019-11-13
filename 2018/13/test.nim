@@ -1,5 +1,7 @@
-type Direction = enum north, east, south, west
-var d: Direction
-while true:
-  inc d
-  echo d
+
+type
+  Obj = ref object
+    x: int
+var
+  y = Obj(x:1)
+  x = new y
