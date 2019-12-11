@@ -1,10 +1,7 @@
 from strutils import split
-from parseutils import parseUint
 import adventus
 
-const
-  part1 = false
-  which = $3
+const part1 = false
 
 type
   Direction = enum
@@ -44,7 +41,7 @@ proc xy(wp: WirePath; d: Direction; m: int): Point =
   of left:  (l.x - m, l.y)
 
 var wps: array[2, WirePath]
-for i,ln in ilines(input(which)):
+for i,ln in ilines(inputf()):
   var wp: WirePath
   add(wp, Point())
   for ins in split(ln, ','):
@@ -79,16 +76,19 @@ for i in 1..<len(wps[0]):
         for j in countdown(j-1, 1): d1 += wps[1][j].m
         when true:
           if a0.d in {right, left}: # w0 is hrz
-            echo '>', x - b0.x
-            echo '>', a0.y - y
-            d0 += (if b0.d == right: x - b0.x else: b0.x - x)
-            d1 += (if a0.d == up:    y - a0.y else: a0.y - y)
+            let
+              ax = abs(if b0.d == right: x - b0.x else: b0.x - x)
+              ay = abs(if a0.d == up:    y - a0.y else: a0.y - y)
+            d1 += ax; d0 += ay
+            #echo 'x', ax, ", y", ay
           else:
-            echo '>', x - a0.x
-            echo '>', b0.y - y
-            d1 += (if a0.d == right: x - a0.x else: a0.x - x)
-            d0 += (if b0.d == up:    y - b0.y else: b0.y - y)
+            let
+              ax = abs(if a0.d == right: x - a0.x else: a0.x - x)
+              ay = abs(if b0.d == up:    y - b0.y else: b0.y - y)
+            d0 += ax; d1 += ay
+            #echo 'x', ax, ", y", ay
         echo "(x", x, ",  y", y, ")\n  totals: one ", d0, ", two ", d1, ", grand ", d0 + d1
+        quit(0)
     b0 = b1
   a0 = a1
 
