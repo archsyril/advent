@@ -18,7 +18,7 @@ converter toLine(s: string): Line =
   new result
   for i,c in pairs(s):
     let kind = case c:
-      of {'!','@','#','$','%','^','&','*','-','+','=','/'}: Symbol
+      of {'*'}: Symbol
       of {'0','1','2','3','4','5','6','7','8','9'}: Number
       else: Empty
     var part = Part(kind: kind)
@@ -81,6 +81,7 @@ for s in cycle(file):
   for i in countup(0,139):
     let pr: Part = s[0][i]
     if pr.kind == Symbol:
+      var true_numbers: seq[int]
       for d in [NW, N, NE, W, E, SW, S, SE]:
         var (x,y) = dir(d)
         x += i
@@ -95,9 +96,14 @@ for s in cycle(file):
             dec j
           var
             true_number = 0
-            powers = len(numbers) - 1
+            zero_amnt = len(numbers) - 1
           for part in numbers:
-            true_number += part.value * (10 ^ powers)
-            dec powers
-          total += true_number
+            true_number += part.value * (10 ^ zero_amnt)
+            dec zero_amnt
+          true_numbers.add(true_number)
+      if len(true_numbers) == 2:
+        var true_number = 1
+        for number in true_numbers:
+          true_number *= number
+        total += true_number
 echo total
